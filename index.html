@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monday Morning Metrics — Q3 FY26</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Song+Myung&family=Nunito+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <style>
+    :root {
+      --kale: #0A8080;
+      --kale-dark: #087070;
+      --kale-light: #CEE6E6;
+      --guava: #F45D48;
+      --charcoal: #222525;
+      --body-text: #404646;
+      --muted: #999999;
+      --bg-white: #FFFFFF;
+      --bg-linen: #F7F4F2;
+      --bg-cream: #FFF4E0;
+      --card-border: #E1DDD7;
+      --alt-row: #E1E1E2;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Nunito Sans', 'Helvetica Neue', Arial, sans-serif;
+      color: var(--body-text);
+      background: var(--bg-white);
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ── Sidebar ── */
+    aside#sidebar {
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+      background: var(--charcoal); color: #fff;
+      display: flex; flex-direction: column; padding: 32px 0;
+    }
+    .brand { padding: 0 28px 28px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 16px; }
+    .brand .gusto { font-weight: 800; font-size: 22px; color: var(--kale-light); letter-spacing: 1px; }
+    .brand .deck-title { display: block; font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.6); margin-top: 6px; }
+    nav#nav { flex: 1; }
+    .nav-group { margin-bottom: 8px; }
+    .nav-group-header { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: rgba(255,255,255,0.4); padding: 12px 28px 6px; text-transform: uppercase; }
+    .nav-group ul { list-style: none; }
+    .nav-group a { display: block; padding: 10px 28px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.7); text-decoration: none; transition: all 0.15s; border-left: 3px solid transparent; }
+    .nav-group a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .nav-group a.active { color: #fff; background: rgba(10,128,128,0.2); border-left-color: var(--kale); font-weight: 700; }
+    .sidebar-footer { padding: 16px 28px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: rgba(255,255,255,0.35); margin-top: auto; }
+
+    /* ── Main ── */
+    main#main { overflow-y: auto; height: 100vh; }
+    section[data-tab] { display: none; padding: 48px 60px 80px; min-height: 100vh; position: relative; }
+    section[data-tab].active { display: block; }
+
+    /* ── Typography ── */
+    .page-title { font-family: 'Song Myung', Georgia, serif; font-size: 38px; font-weight: 400; color: var(--charcoal); margin-bottom: 8px; line-height: 1.2; }
+    .tab-intro { font-size: 17px; color: var(--muted); margin-bottom: 32px; }
+
+    /* ── KPI Tiles ── */
+    .kpi-grid { display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 36px; max-width: 1100px; }
+    .kpi-tile {
+      flex: 1 1 calc(33.33% - 16px); min-width: 180px;
+      background: var(--bg-linen); border: 1px solid var(--card-border); border-top: 4px solid var(--kale);
+      border-radius: 10px; padding: 24px 22px; text-align: center;
+      box-shadow: 0 2px 4px rgba(34,37,37,0.06), 0 8px 20px rgba(10,128,128,0.10);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .kpi-tile:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(34,37,37,0.08), 0 14px 30px rgba(10,128,128,0.16); }
+    .kpi-tile.miss { border-top-color: var(--guava); }
+    .kpi-number { font-size: 40px; font-weight: 800; color: var(--kale); line-height: 1; letter-spacing: -1px; }
+    .kpi-tile.miss .kpi-number { color: var(--guava); }
+    .kpi-label { font-size: 14px; color: var(--body-text); margin-top: 10px; font-weight: 500; }
+    .kpi-variance { font-size: 13px; margin-top: 6px; font-weight: 600; }
+    .kpi-variance.beat { color: var(--kale); }
+    .kpi-variance.miss { color: var(--guava); }
+    .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* ── Content Card ── */
+    .content-card {
+      max-width: 1100px; padding: 28px 32px;
+      background: var(--bg-linen); border: 1px solid var(--card-border); border-top: 4px solid var(--kale);
+      border-radius: 10px; box-shadow: 0 2px 4px rgba(34,37,37,0.06), 0 8px 20px rgba(10,128,128,0.10);
+      margin-bottom: 28px;
+    }
+    .content-card h3 { font-size: 18px; font-weight: 700; color: var(--charcoal); margin-bottom: 12px; }
+    .content-card p, .content-card li { font-size: 15px; line-height: 1.65; color: var(--body-text); }
+    .content-card strong { color: var(--charcoal); }
+    .content-card ul { list-style: disc; padding-left: 20px; }
+    .content-card li { margin-bottom: 6px; }
+    .content-card .sub-bullets { list-style: circle; margin-top: 4px; padding-left: 20px; }
+    .content-card .sub-bullets li { font-size: 14px; color: var(--muted); margin-bottom: 3px; }
+
+    /* ── Chart Card ── */
+    .chart-card {
+      max-width: 1100px; background: var(--bg-white); border: 1px solid var(--card-border);
+      border-radius: 10px; padding: 28px; margin-bottom: 28px;
+      box-shadow: 0 2px 4px rgba(34,37,37,0.04);
+    }
+    .chart-card .chart-title { font-size: 15px; font-weight: 700; color: var(--charcoal); margin-bottom: 16px; }
+    .chart-card canvas { max-height: 300px; }
+
+    /* ── Two Column ── */
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 1100px; margin-bottom: 28px; }
+
+    /* ── Progress Bars ── */
+    .progress-row { margin-bottom: 20px; }
+    .progress-label { font-size: 14px; font-weight: 600; color: var(--charcoal); margin-bottom: 4px; }
+    .progress-values { font-size: 24px; font-weight: 800; color: var(--kale); }
+    .progress-values span { color: var(--muted); font-weight: 400; font-size: 16px; }
+    .progress-bar { background: #E8E5E1; border-radius: 8px; height: 12px; position: relative; overflow: visible; margin-top: 8px; }
+    .progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, var(--kale-dark), var(--kale)); }
+    .progress-marker { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--charcoal); border-radius: 1px; }
+    .progress-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+    /* ── Waterfall Table ── */
+    .waterfall { max-width: 700px; }
+    .wf-row { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid #EAEAEA; font-size: 15px; }
+    .wf-row:last-child { border-bottom: none; }
+    .wf-label { flex: 1; color: var(--body-text); }
+    .wf-value { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 100px; text-align: right; }
+    .wf-value.pos { color: var(--kale); }
+    .wf-value.neg { color: var(--guava); }
+    .wf-row.subtotal { background: var(--kale-light); border-radius: 6px; margin: 4px 0; font-weight: 700; }
+    .wf-row.total { background: var(--charcoal); color: #fff; border-radius: 6px; margin-top: 4px; font-weight: 700; }
+    .wf-row.total .wf-value { color: #fff; }
+    .wf-row.indent .wf-label { padding-left: 20px; font-size: 13px; color: var(--muted); }
+
+    /* ── Expandable ── */
+    .expandable { max-width: 1100px; border: 1px solid var(--card-border); border-radius: 10px; margin-bottom: 12px; overflow: hidden; }
+    .exp-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; cursor: pointer; background: var(--bg-white); transition: background 0.15s; }
+    .exp-header:hover { background: var(--bg-linen); }
+    .exp-title { font-weight: 700; font-size: 16px; color: var(--charcoal); }
+    .exp-summary { display: flex; align-items: center; gap: 12px; }
+    .exp-amount { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; }
+    .exp-amount.beat { color: var(--kale); }
+    .exp-amount.miss { color: var(--guava); }
+    .exp-arrow { transition: transform 0.2s; color: var(--muted); font-size: 12px; }
+    .expandable.open .exp-arrow { transform: rotate(180deg); }
+    .exp-content { display: none; padding: 0 24px 16px; background: var(--bg-linen); }
+    .expandable.open .exp-content { display: block; }
+    .driver-list { list-style: none; padding-top: 12px; }
+    .driver-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--card-border); font-size: 14px; }
+    .driver-item:last-child { border-bottom: none; }
+    .dl-label { color: var(--body-text); }
+    .dl-value { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .dl-value.beat { color: var(--kale); }
+    .dl-value.miss { color: var(--guava); }
+
+    /* ── Folio ── */
+    .folio { position: absolute; bottom: 20px; left: 60px; right: 60px; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .folio .gusto-mark { font-weight: 800; letter-spacing: 1px; color: var(--kale-light); opacity: 0.5; }
+
+    @media (max-width: 1024px) {
+      body { grid-template-columns: 1fr; }
+      aside#sidebar { display: none; }
+      section[data-tab] { padding: 32px 24px 60px; }
+      .kpi-tile { flex: 1 1 calc(50% - 12px); }
+      .two-col { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <span class="gusto">gusto</span>
+    <span class="deck-title">Monday Morning Metrics</span>
+  </div>
+  <nav id="nav"></nav>
+  <div class="sidebar-footer">Confidential &mdash; CorpFin &middot; Q3 FY26</div>
+</aside>
+
+<main id="main"></main>
+
+<script>
+// ════════════════════════════════════════════════
+// DATA — Swap this block each quarter
+// ════════════════════════════════════════════════
+const PERIOD = { label: 'Q3 FY26', close: 'January 2026 Close', source: 'CorpFin | January 2026 Close / February Reforecast' };
+
+const SCORECARD = [
+  { number: '$1,099M', label: 'Ending ARR', variance: '-$2M vs forecast', beat: false, sub: '+36% YoY' },
+  { number: '$292.4M', label: 'Q3 Revenue', variance: '+$5.7M / +2.0% vs forecast', beat: true, sub: '+42% YoY' },
+  { number: '$14.6M',  label: 'EBITDA', variance: '+$15.7M vs forecast', beat: true, sub: 'Turned -$1.1M fcast into profit' },
+  { number: '-$1.0M',  label: 'Operating Cash Flow', variance: '-$2.0M vs forecast', beat: false, sub: 'NWC headwind from Guideline' },
+  { number: '3,509',   label: 'Ending Headcount', variance: '100 below forecast (3,609)', beat: true },
+  { number: '$314K',   label: 'ARR / Gustie', variance: 'vs $305K forecast', beat: true, sub: 'Efficiency improving' },
+];
+
+const VARCOMP_TRACKER = [
+  { label: 'ARR vs FY Target', actual: '$1,099M', target: '$1,174M', pct: 93.6, timePct: 75, note: '93.6% of FY target | Q3 = 75% through year' },
+  { label: 'Ending HC vs FY Plan', actual: '3,509', target: '3,700', pct: 94.8, timePct: 75, note: '94.8% of FY plan | 191 below plan' },
+];
+
+const EXEC_SUMMARY = {
+  headline: 'March Results: Revenue of $100.1M slightly below Q4 forecast (-$0.2M); EBITDA of +$8.1M (-$1.1M vs forecast). No material changes to FY26 expectations.',
+  bullets: [
+    { text: 'Revenue (-$0.2M vs Q4 Forecast)', detail: 'Core Business Revenue softness (-$4.2M driven by 401k, Payroll, & Tax Credits) offset by Other Revenues (+$2.9M) and Interest on Funds (+$0.8M).' },
+    { text: 'Expense (+$0.9M vs Q4 Forecast)', detail: 'S&M savings (-$1.2M from lower marketing & outside services) offset by R&D (+$2.7M from personnel costs and IT). CoS and G&A roughly flat.' },
+    { text: 'Headcount tracking inline with forecast', detail: 'Expect to end year with ~3,550 in-seat vs forecast of 3,552.' },
+  ]
+};
+
+const EBITDA_DRIVERS = [
+  { label: 'Revenue Beat', value: 5732, pos: true },
+  { label: 'HC Favorability', value: 4700, pos: true },
+  { label: 'CPH Favorability', value: 3100, pos: true },
+  { label: 'G&A Loss Favorability', value: 2080, pos: true },
+  { label: 'Corp Business Penalties', value: -2815, pos: false },
+  { label: 'All Other OpEx', value: 2935, pos: true },
+];
+
+const ARR_PRODUCTS = [
+  { name: 'International', delta: 2 },
+  { name: 'Money Group', delta: 1 },
+  { name: 'Symmetry', delta: 1 },
+  { name: 'Embedded', delta: 1 },
+  { name: 'Health Insurance', delta: -2 },
+  { name: '401k', delta: -4 },
+];
+
+const REVENUE_SECTIONS = [
+  { title: 'Core Business', amount: '$280.4M (+$4.0M / +1.5%)', beat: true, drivers: [
+    { label: 'Payroll Subscriptions', value: '+$0.7M', beat: true },
+    { label: 'Symmetry', value: '+$0.5M', beat: true },
+  ]},
+  { title: '401K Revenue', amount: '$35.1M (+$4.4M / +14%)', beat: true, drivers: [
+    { label: '$10.8M from Entity 2 (phasing out)', value: 'Note', beat: null },
+  ]},
+  { title: 'Interest on Funds Held', amount: '$12.0M (+$1.7M / +17%)', beat: true, drivers: [
+    { label: 'Favorable rate environment', value: '+17% vs fcast', beat: true },
+  ]},
+];
+
+const FSLI_SECTIONS = [
+  { title: 'Cost of Sales', amount: '$68.5M (-$3.0M / -4.2%)', beat: true, variance: -3000, drivers: [
+    { label: 'Personnel (62 HC below forecast)', value: '-$1.5M', beat: true },
+    { label: 'Subcontractor wind-downs', value: '-$1.2M', beat: true },
+    { label: 'Lower software/partner spend', value: '-$1.0M', beat: true },
+    { label: 'Higher hosting (AWS)', value: '+$0.5M', beat: false },
+  ]},
+  { title: 'Sales & Marketing', amount: '-$2.2M (-2.3%)', beat: true, variance: -2200, drivers: [
+    { label: 'Personnel (11 HC miss = 40%, lower benefits = 60%)', value: '-$1.2M', beat: true },
+    { label: 'Outside services', value: '-$1.0M', beat: true },
+    { label: 'Lower referral payouts', value: '-$0.7M', beat: true },
+  ]},
+  { title: 'Research & Development', amount: '-$3.6M (-4.2%)', beat: true, variance: -3600, drivers: [
+    { label: 'Personnel (lower CPH from benefits/comp mix)', value: '-$4.0M', beat: true },
+    { label: 'Higher subcontractor spend', value: '+$1.0M', beat: false },
+    { label: 'AI/Bedrock usage growth', value: 'offset', beat: null },
+  ]},
+  { title: 'General & Administrative', amount: '-$1.5M (-3.9%)', beat: true, variance: -1500, drivers: [
+    { label: 'Customer losses/bad debt', value: '-$2.0M', beat: true },
+    { label: 'Corporate Business Penalties', value: '+$2.7M', beat: false },
+    { label: 'Professional services', value: '+$1.1M', beat: false },
+  ]},
+];
+
+const CASHFLOW_BRIDGE = [
+  { label: 'EBITDA Favorability', value: '+$17,200', pos: true },
+  { label: 'CapEx', value: '($1,800)', pos: false },
+  { label: 'Change in NWC', value: '($11,900)', pos: false },
+];
+
+// ════════════════════════════════════════════════
+// TABS
+// ════════════════════════════════════════════════
+const TABS = [
+  { id: 'scorecard',  group: 'OVERVIEW',     label: 'Scorecard' },
+  { id: 'varcomp',    group: 'OVERVIEW',     label: 'Variable Comp Tracker' },
+  { id: 'ebitda',     group: 'RESULTS',      label: 'P&L / EBITDA Bridge' },
+  { id: 'revenue',    group: 'RESULTS',      label: 'Revenue & ARR' },
+  { id: 'expenses',   group: 'RESULTS',      label: 'Expense Discipline' },
+  { id: 'efficiency', group: 'PERFORMANCE',  label: 'HC & Efficiency' },
+  { id: 'cashflow',   group: 'PERFORMANCE',  label: 'Cash Flow' },
+];
+
+// ════════════════════════════════════════════════
+// RENDERERS
+// ════════════════════════════════════════════════
+
+function renderScorecard() {
+  const kpis = SCORECARD.map(s => `
+    <div class="kpi-tile ${s.beat ? '' : 'miss'}">
+      <div class="kpi-number">${s.number}</div>
+      <div class="kpi-label">${s.label}</div>
+      <div class="kpi-variance ${s.beat ? 'beat' : 'miss'}">${s.variance}</div>
+      ${s.sub ? `<div class="kpi-sub">${s.sub}</div>` : ''}
+    </div>`).join('');
+
+  return `
+    <h1 class="page-title">${PERIOD.label} Results</h1>
+    <p class="tab-intro">${PERIOD.close} &mdash; Monday Morning Metrics</p>
+    <div class="kpi-grid">${kpis}</div>`;
+}
+
+function renderVarcomp() {
+  const trackers = VARCOMP_TRACKER.map(t => `
+    <div class="progress-row">
+      <div class="progress-label">${t.label}</div>
+      <div class="progress-values">${t.actual} <span>/ ${t.target}</span></div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${t.pct}%"></div>
+        <div class="progress-marker" style="left:${t.timePct}%"></div>
+      </div>
+      <div class="progress-note">${t.note}</div>
+    </div>`).join('');
+
+  return `
+    <h1 class="page-title">FY26 Variable Comp Tracker</h1>
+    <p class="tab-intro">Attainment against key metrics tied to variable compensation payout</p>
+    <div class="content-card">
+      ${trackers}
+    </div>
+    <div class="content-card" style="border-top-color: var(--bg-cream); background: var(--bg-cream);">
+      <h3>Payout Formula</h3>
+      <p>Variable comp metrics and weightings pending confirmation from Priyanka. Known inputs: <strong>ARR</strong> and <strong>Ending Headcount</strong>. Additional metrics (OCF, EBITDA, other) to be added once confirmed.</p>
+    </div>`;
+}
+
+function renderEbitda() {
+  const bullets = EXEC_SUMMARY.bullets.map(b => `
+    <li><strong>${b.text}</strong>
+      <ul class="sub-bullets"><li>${b.detail}</li></ul>
+    </li>`).join('');
+
+  const rows = EBITDA_DRIVERS.map(d => `
+    <div class="wf-row">
+      <span class="wf-label">${d.label}</span>
+      <span class="wf-value ${d.pos ? 'pos' : 'neg'}">${d.pos ? '+' : ''}$${Math.abs(d.value).toLocaleString()}</span>
+    </div>`).join('');
+
+  const total = EBITDA_DRIVERS.reduce((s, d) => s + d.value, 0);
+
+  return `
+    <h1 class="page-title">P&L / EBITDA Bridge</h1>
+    <p class="tab-intro">EBITDA Beat: +$15.7M vs Q3 Forecast</p>
+    <div class="content-card">
+      <h3>Executive Summary</h3>
+      <p style="margin-bottom:12px"><strong>${EXEC_SUMMARY.headline}</strong></p>
+      <ul>${bullets}</ul>
+    </div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">EBITDA Waterfall ($K)</div>
+        <canvas id="waterfallChart" height="280"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Variance Drivers</div>
+        <div class="waterfall">
+          ${rows}
+          <div class="wf-row subtotal">
+            <span class="wf-label">EBITDA Beat</span>
+            <span class="wf-value pos">+$${total.toLocaleString()}</span>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRevenue() {
+  const expandables = REVENUE_SECTIONS.map(s => `
+    <div class="expandable">
+      <div class="exp-header" onclick="this.closest('.expandable').classList.toggle('open')">
+        <span class="exp-title">${s.title}</span>
+        <div class="exp-summary">
+          <span class="exp-amount ${s.beat ? 'beat' : 'miss'}">${s.amount}</span>
+          <span class="exp-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="exp-content">
+        <ul class="driver-list">
+          ${s.drivers.map(d => `<li class="driver-item"><span class="dl-label">${d.label}</span><span class="dl-value ${d.beat === true ? 'beat' : d.beat === false ? 'miss' : ''}">${d.value}</span></li>`).join('')}
+        </ul>
+      </div>
+    </div>`).join('');
+
+  return `
+    <h1 class="page-title">Revenue & ARR</h1>
+    <p class="tab-intro">Q3 Revenue: $292.4M (+$5.7M / +2.0% vs forecast) &mdash; +42% YoY</p>
+    <div class="kpi-grid">
+      <div class="kpi-tile"><div class="kpi-number">$292.4M</div><div class="kpi-label">Q3 Revenue</div><div class="kpi-variance beat">+$5.7M / +2.0% vs forecast</div><div class="kpi-sub">+42% YoY</div></div>
+      <div class="kpi-tile miss"><div class="kpi-number">$1,099M</div><div class="kpi-label">Ending ARR</div><div class="kpi-variance miss">-$2M vs forecast ($1,101M)</div></div>
+      <div class="kpi-tile"><div class="kpi-number">$1,015M</div><div class="kpi-label">Organic ARR</div><div class="kpi-variance beat">+$2M vs forecast</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-card">
+        <div class="chart-title">Organic ARR by Product: Variance vs Forecast ($M)</div>
+        <canvas id="arrChart" height="220"></canvas>
+      </div>
+      <div>${expandables}</div>
+    </div>`;
+}
+
+function renderExpenses() {
+  const expandables = FSLI_SECTIONS.map(s => `
+    <div class="expandable">
+      <div class="exp-header" onclick="this.closest('.expandable').classList.toggle('open')">
+        <span class="exp-title">${s.title}</span>
+        <div class="exp-summary">
+          <span class="exp-amount beat">${s.amount}</span>
+          <span class="exp-arrow">&#9660;</span>
+        </div>
+      </div>
+      <div class="exp-content">
+        <ul class="driver-list">
+          ${s.drivers.map(d => `<li class="driver-item"><span class="dl-label">${d.label}</span><span class="dl-value ${d.beat === true ? 'beat' : d.beat === false ? 'miss' : ''}">${d.value}</span></li>`).join('')}
+        </ul>
+      </div>
+    </div>`).join('');
+
+  return `
+    <h1 class="page-title">Expense Discipline</h1>
+    <p class="tab-intro">Total OpEx: -$7.0M favorable vs forecast &mdash; every FSLI beat</p>
+    <div class="content-card">
+      <p>Total OpEx came in <strong>$7.0M favorable</strong> vs forecast. Personnel savings (~$7.8M) drove most of the favorability, split <strong>~60% from lower headcount</strong> and <strong>~40% from lower cost per head</strong>. Every FSLI beat &mdash; largest savings in R&D (-$3.6M) and Cost of Sales (-$3.0M).</p>
+    </div>
+    <div class="chart-card" style="max-width:1100px">
+      <div class="chart-title">FSLI Variance vs Forecast ($K) &mdash; All Favorable</div>
+      <canvas id="fsliChart" height="200"></canvas>
+    </div>
+    ${expandables}`;
+}
+
+function renderEfficiency() {
+  return `
+    <h1 class="page-title">Headcount & Efficiency</h1>
+    <p class="tab-intro">Personnel savings: ~$7.8M &mdash; 60% headcount / 40% cost per head</p>
+    <div class="kpi-grid">
+      <div class="kpi-tile"><div class="kpi-number">3,509</div><div class="kpi-label">Total Headcount</div><div class="kpi-variance beat">100 below forecast (3,609)</div></div>
+      <div class="kpi-tile"><div class="kpi-number">$314K</div><div class="kpi-label">ARR / Gustie</div><div class="kpi-variance beat">vs $305K forecast</div></div>
+    </div>
+    <div class="two-col">
+      <div>
+        <div class="kpi-grid" style="margin-bottom:0">
+          <div class="kpi-tile" style="flex:1"><div class="kpi-number">~$4.7M</div><div class="kpi-label">Lower HC Impact</div><div class="kpi-variance beat">~60% of personnel savings</div><div class="kpi-sub">100 heads below forecast</div></div>
+          <div class="kpi-tile" style="flex:1"><div class="kpi-number">~$3.1M</div><div class="kpi-label">Lower CPH Impact</div><div class="kpi-variance beat">~40% of personnel savings</div><div class="kpi-sub">Benefits, travel, comp mix</div></div>
+        </div>
+      </div>
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">Personnel Variance Decomposition</div>
+        <canvas id="personnelChart" height="260"></canvas>
+      </div>
+    </div>`;
+}
+
+function renderCashflow() {
+  const rows = CASHFLOW_BRIDGE.map(d => `
+    <div class="wf-row">
+      <span class="wf-label">${d.label}</span>
+      <span class="wf-value ${d.pos ? 'pos' : 'neg'}">${d.value}</span>
+    </div>`).join('');
+
+  return `
+    <h1 class="page-title">Cash Flow</h1>
+    <p class="tab-intro">OCF impacted by NWC headwind despite strong EBITDA performance</p>
+    <div class="kpi-grid">
+      <div class="kpi-tile miss"><div class="kpi-number">-$1.0M</div><div class="kpi-label">Operating Cash Flow</div><div class="kpi-variance miss">-$2.0M vs forecast</div></div>
+      <div class="kpi-tile"><div class="kpi-number">+$15.7M</div><div class="kpi-label">EBITDA Beat</div><div class="kpi-variance beat">Strong operating performance</div></div>
+    </div>
+    <div class="two-col">
+      <div class="chart-card" style="margin-bottom:0">
+        <div class="chart-title">EBITDA to Cash Flow Bridge ($K)</div>
+        <div class="waterfall">
+          ${rows}
+          <div class="wf-row indent"><span class="wf-label">Primarily Guideline acquisition BS items</span><span class="wf-value"></span></div>
+          <div class="wf-row total">
+            <span class="wf-label">Total Cash Flow Beat</span>
+            <span class="wf-value">+$2,100</span>
+          </div>
+        </div>
+      </div>
+      <div class="content-card" style="align-self:start">
+        <h3>The Cash Flow Story</h3>
+        <p>Despite strong EBITDA performance (+$15.7M beat), operating cash flow was impacted by <strong>NWC unfavorability (-$11.9M)</strong> driven by Guideline acquisition balance sheet items. Net cash flow beat of <strong>+$2.1M</strong> vs forecast.</p>
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+const RENDERERS = {
+  scorecard: renderScorecard, varcomp: renderVarcomp, ebitda: renderEbitda,
+  revenue: renderRevenue, expenses: renderExpenses, efficiency: renderEfficiency, cashflow: renderCashflow,
+};
+
+function renderSidebar() {
+  const nav = document.getElementById('nav');
+  const groups = {};
+  TABS.forEach(t => { (groups[t.group] = groups[t.group] || []).push(t); });
+  let html = '';
+  for (const [group, tabs] of Object.entries(groups)) {
+    html += `<div class="nav-group"><div class="nav-group-header">${group}</div><ul>`;
+    tabs.forEach(t => { html += `<li><a href="#" data-tab-link="${t.id}">${t.label}</a></li>`; });
+    html += '</ul></div>';
+  }
+  nav.innerHTML = html;
+  nav.querySelectorAll('[data-tab-link]').forEach(a => {
+    a.addEventListener('click', e => { e.preventDefault(); activateTab(a.dataset.tabLink); });
+  });
+}
+
+function renderTabs() {
+  const main = document.getElementById('main');
+  TABS.forEach((t, i) => {
+    const section = document.createElement('section');
+    section.dataset.tab = t.id;
+    section.innerHTML = RENDERERS[t.id]() + `<div class="folio"><span>${i + 1}</span><span>Confidential</span><span class="gusto-mark">gusto</span></div>`;
+    main.appendChild(section);
+  });
+}
+
+function activateTab(id) {
+  document.querySelectorAll('section[data-tab]').forEach(s => s.classList.remove('active'));
+  const target = document.querySelector(`section[data-tab="${id}"]`);
+  if (target) target.classList.add('active');
+  document.querySelectorAll('[data-tab-link]').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('data-tab-link') === id);
+  });
+  document.getElementById('main').scrollTop = 0;
+  requestAnimationFrame(() => initCharts(id));
+}
+
+// ════════════════════════════════════════════════
+// CHARTS
+// ════════════════════════════════════════════════
+const charts = {};
+
+function initCharts(tabId) {
+  if (tabId === 'ebitda' && !charts.waterfall) {
+    charts.waterfall = new Chart(document.getElementById('waterfallChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Forecast', 'Revenue', 'HC', 'CPH', 'G&A Loss', 'Penalties', 'Other', 'Actual'],
+        datasets: [{
+          data: [[-1100,-1100],[-1100,4632],[4632,9332],[9332,12432],[12432,14512],[14512,11697],[11697,14632],[0,14632]],
+          backgroundColor: ctx => { const i=ctx.dataIndex; if(i===0) return '#999'; if(i===7) return '#0A8080'; if(i===5) return '#F49582'; return '#2BA8AD'; },
+          borderRadius: 4, borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: 'Nunito Sans', size: 11 } } },
+          y: { grid: { color: '#E1E1E2' }, ticks: { callback: v => '$'+(v/1000).toFixed(0)+'K', font: { family: 'Nunito Sans' } } }
+        }
+      }
+    });
+  }
+
+  if (tabId === 'revenue' && !charts.arr) {
+    charts.arr = new Chart(document.getElementById('arrChart'), {
+      type: 'bar',
+      data: {
+        labels: ARR_PRODUCTS.map(p => p.name),
+        datasets: [{ data: ARR_PRODUCTS.map(p => p.delta), backgroundColor: ctx => ctx.raw >= 0 ? '#2BA8AD' : '#F49582', borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => (ctx.raw>=0?'+':'')+'$'+ctx.raw+'M' } } },
+        scales: {
+          x: { grid: { color: '#E1E1E2' }, ticks: { callback: v => (v>=0?'+':'')+'$'+v+'M', font: { family: 'Nunito Sans' } } },
+          y: { grid: { display: false }, ticks: { font: { family: 'Nunito Sans', size: 13 } } }
+        }
+      }
+    });
+  }
+
+  if (tabId === 'expenses' && !charts.fsli) {
+    charts.fsli = new Chart(document.getElementById('fsliChart'), {
+      type: 'bar',
+      data: {
+        labels: FSLI_SECTIONS.map(s => s.title),
+        datasets: [{ data: FSLI_SECTIONS.map(s => s.variance), backgroundColor: '#2BA8AD', borderRadius: 4 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => '-$'+Math.abs(ctx.raw/1000).toFixed(1)+'M favorable' } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { family: 'Nunito Sans' } } },
+          y: { grid: { color: '#E1E1E2' }, ticks: { callback: v => '-$'+Math.abs(v/1000).toFixed(1)+'M', font: { family: 'Nunito Sans' } }, reverse: true }
+        }
+      }
+    });
+  }
+
+  if (tabId === 'efficiency' && !charts.personnel) {
+    charts.personnel = new Chart(document.getElementById('personnelChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['HC Savings (~60%)', 'CPH Savings (~40%)'],
+        datasets: [{ data: [4700, 3100], backgroundColor: ['#0A8080', '#8DD3D4'], borderWidth: 0 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Nunito Sans', size: 14 }, padding: 20 } },
+          tooltip: { callbacks: { label: ctx => ctx.label+': $'+(ctx.raw/1000).toFixed(1)+'M' } }
+        }
+      }
+    });
+  }
+}
+
+// ── Boot ──
+document.addEventListener('DOMContentLoaded', () => { renderSidebar(); renderTabs(); activateTab(TABS[0].id); });
+
+// Keyboard nav
+document.addEventListener('keydown', e => {
+  const ids = TABS.map(t => t.id);
+  const cur = ids.findIndex(id => document.querySelector(`section[data-tab="${id}"]`)?.classList.contains('active'));
+  if (e.key === 'ArrowRight' && cur < ids.length - 1) activateTab(ids[cur + 1]);
+  if (e.key === 'ArrowLeft' && cur > 0) activateTab(ids[cur - 1]);
+});
+</script>
+</body>
+</html>
